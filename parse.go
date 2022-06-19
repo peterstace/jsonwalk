@@ -48,12 +48,12 @@ func parseObject(
 
 	i += len(parseWhitespace(data[i:]))
 
-	for i < len(data) {
-		if data[i] == '}' {
-			i++
-			return data[:i], nil
-		}
+	if i < len(data) && data[i] == '}' {
+		i++
+		return data[:i], nil
+	}
 
+	for i < len(data) {
 		key, err := parseString(data[i:])
 		if err != nil {
 			return nil, err
@@ -81,6 +81,18 @@ func parseObject(
 				return nil, err
 			}
 		}
+
+		if i >= len(data) {
+			return nil, io.ErrUnexpectedEOF
+		}
+		if data[i] == '}' {
+			i++
+			return data[:i], nil
+		}
+		if data[i] != ',' {
+			return nil, unexpectedInputError{data[i]}
+		}
+		i++
 	}
 	return nil, io.ErrUnexpectedEOF
 }
@@ -93,6 +105,7 @@ func parseArray(data []byte) ([]byte, error) {
 	if data[i] != '[' {
 		return nil, unexpectedInputError{data[i]}
 	}
+	i++
 
 	i += len(parseWhitespace(data[i:]))
 
@@ -107,6 +120,7 @@ func parseArray(data []byte) ([]byte, error) {
 			return nil, err
 		}
 		i += len(val)
+
 		if i >= len(data) {
 			return nil, io.ErrUnexpectedEOF
 		}
@@ -234,7 +248,7 @@ func parseNumber(data []byte) ([]byte, error) {
 		i++
 	}
 
-	if i < len(data) {
+	if i >= len(data) {
 		return nil, io.ErrUnexpectedEOF
 	}
 	if data[i] == '0' {
@@ -244,10 +258,8 @@ func parseNumber(data []byte) ([]byte, error) {
 			return nil, unexpectedInputError{data[i]}
 		}
 		i++
-		for {
-			if i < len(data) && data[i] >= '0' && data[i] <= '9' {
-				i++
-			}
+		for i < len(data) && data[i] >= '0' && data[i] <= '9' {
+			i++
 		}
 	}
 
@@ -276,7 +288,7 @@ func parseNumber(data []byte) ([]byte, error) {
 		}
 	}
 
-	return data[i:], nil
+	return data[:i], nil
 }
 
 func parseWhitespace(data []byte) []byte {
