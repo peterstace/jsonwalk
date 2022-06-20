@@ -1,4 +1,4 @@
-package jsonwalk
+package jsonwindow
 
 func Object(jsonObject []byte, fn func(key, value []byte) error) error {
 	_, err := parseObject(jsonObject, fn)

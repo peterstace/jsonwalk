@@ -1,4 +1,4 @@
-package jsonwalk
+package jsonwindow
 
 import (
 	"fmt"

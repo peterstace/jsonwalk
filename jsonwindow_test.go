@@ -1,11 +1,11 @@
-package jsonwalk_test
+package jsonwindow_test
 
 import (
 	"reflect"
 	"strconv"
 	"testing"
 
-	"github.com/peterstace/jsonwalk"
+	"github.com/peterstace/jsonwindow"
 )
 
 type objectCallSpec struct {
@@ -38,7 +38,7 @@ func TestWalkObject(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Logf("input: %v", tc.input)
 			var gotCalls []objectCallSpec
-			if err := jsonwalk.Object(
+			if err := jsonwindow.Object(
 				[]byte(tc.input),
 				func(key, value []byte) error {
 					gotCalls = append(gotCalls, objectCallSpec{
