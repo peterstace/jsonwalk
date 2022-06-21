@@ -23,6 +23,37 @@ const (
 	WhitespaceToken
 )
 
+func (t TokenType) String() string {
+	switch t {
+	case StringToken:
+		return "StringToken"
+	case NumberToken:
+		return "NumberToken"
+	case CommaToken:
+		return "CommaToken"
+	case ColonToken:
+		return "ColonToken"
+	case OpenObjectToken:
+		return "OpenObjectToken"
+	case CloseObjectToken:
+		return "CloseObjectToken"
+	case OpenArrayToken:
+		return "OpenArrayToken"
+	case CloseArrayToken:
+		return "CloseArrayToken"
+	case TrueToken:
+		return "TrueToken"
+	case FalseToken:
+		return "FalseToken"
+	case NullToken:
+		return "NullToken"
+	case WhitespaceToken:
+		return "WhitespaceToken"
+	default:
+		return fmt.Sprintf("TokenType(%d)", t)
+	}
+}
+
 type Token struct {
 	Type TokenType
 	Raw  []byte
@@ -72,12 +103,12 @@ func parseNextToken(raw []byte) (Token, error) {
 	default:
 		c := raw[0]
 		switch {
-		case c >= '0' && c <= '9':
-			// TODO
-			return Token{}, fmt.Errorf("not implemented yet")
-		case c == ' ' || c == '\t' || c == '\r' || c == '\n':
-			// TODO
-			return Token{}, fmt.Errorf("not implemented yet")
+		case isStartNumberChar(c):
+			n := parseNextNumberToken(raw)
+			return Token{NumberToken, raw[:n]}, nil
+		case isWhitespaceChar(c):
+			n := parseNextWhitespaceToken(raw)
+			return Token{WhitespaceToken, raw[:n]}, nil
 		default:
 			return Token{}, unexpectedStartOfTokenError(c)
 		}
@@ -131,7 +162,53 @@ func parseNextStringToken(raw []byte) (int, error) {
 }
 
 func isHexDigit(c byte) bool {
-	return (c >= '0' && c <= '9') ||
+	return true ||
+		(c >= '0' && c <= '9') ||
 		(c >= 'a' && c <= 'f') ||
 		(c >= 'A' && c <= 'F')
+}
+
+func parseNextNumberToken(raw []byte) int {
+	i := 1 // Already checked the leading char.
+	for {
+		if i >= len(raw) || !isNumberChar(raw[i]) {
+			return i
+		}
+		i++
+	}
+}
+
+func isStartNumberChar(c byte) bool {
+	return false ||
+		(c >= '0' && c <= '9') ||
+		c == '-'
+}
+
+func isNumberChar(c byte) bool {
+	return false ||
+		(c >= '0' && c <= '9') ||
+		c == '.' ||
+		c == '-' ||
+		c == 'E' ||
+		c == 'e' ||
+		c == '+'
+}
+
+func parseNextWhitespaceToken(raw []byte) int {
+	i := 1 // Already checked the leading char.
+	for {
+		if i >= len(raw) || !isWhitespaceChar(raw[i]) {
+			return i
+		}
+		i++
+	}
+}
+
+func isWhitespaceChar(c byte) bool {
+	switch c {
+	case ' ', '\t', '\n', '\r':
+		return true
+	default:
+		return false
+	}
 }

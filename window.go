@@ -1,7 +1,5 @@
 package jsonwindow
 
-import "fmt"
-
 type Window struct {
 	cur int
 	buf []byte
@@ -12,5 +10,10 @@ func New(raw []byte) *Window {
 }
 
 func (w *Window) NextToken() (Token, error) {
-	return Token{}, fmt.Errorf("not implemented yet")
+	tok, err := parseNextToken(w.buf[w.cur:])
+	if err != nil {
+		return Token{}, err
+	}
+	w.cur += len(tok.Raw)
+	return tok, nil
 }
