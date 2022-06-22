@@ -8,6 +8,8 @@ import (
 	"github.com/peterstace/jsonwindow"
 )
 
+// TODO: test keyword tokens: true, false, null.
+
 var (
 	validStringTokens = []string{
 		`""`, `"hello"`,
@@ -145,49 +147,3 @@ func TestTokenDelim(t *testing.T) {
 		})
 	}
 }
-
-//func TestTokenValid(t *testing.T) {
-//	type tokenSpec struct {
-//		typ jsonwindow.TokenType
-//		txt string
-//	}
-//	for i, tc := range []struct {
-//		input string
-//		want  []tokenSpec
-//	}{
-//		{
-//			input: "",
-//			want:  nil,
-//		},
-//		{
-//			input: `123`,
-//			want:  []tokenSpec{{jsonwindow.NumberToken, `123`}},
-//		},
-//		{
-//			input: " \t\n\r",
-//			want:  []tokenSpec{{jsonwindow.WhitespaceToken, " \t\n\r"}},
-//		},
-//	} {
-//		t.Run(strconv.Itoa(i), func(t *testing.T) {
-//			win := jsonwindow.New([]byte(tc.input))
-//			var got []tokenSpec
-//			for {
-//				tok, err := win.NextToken()
-//				if err == io.EOF {
-//					break
-//				}
-//				if err != nil {
-//					t.Fatalf("unexpected error: %v", err)
-//				}
-//				got = append(got, tokenSpec{tok.Type, string(tok.Raw)})
-//			}
-//			if !reflect.DeepEqual(got, tc.want) {
-//				t.Log("input:")
-//				t.Log(hex.Dump([]byte(tc.input)))
-//				t.Logf("want: %v", tc.want)
-//				t.Logf("got: %v", got)
-//				t.Errorf("mismatch")
-//			}
-//		})
-//	}
-//}

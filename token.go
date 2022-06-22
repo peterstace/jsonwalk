@@ -27,29 +27,13 @@ func parseNextToken(raw []byte) (Token, error) {
 	case ']':
 		return Token{CloseArrayToken, raw[:1]}, nil
 	case '"':
-		n, err := parseNextStringToken(raw)
-		if err != nil {
-			return Token{}, err
-		}
-		return Token{StringToken, raw[:n]}, nil
+		return parseNextStringToken(raw)
 	case 't':
-		n, err := parseNextKeywordToken(raw, trueBytes)
-		if err != nil {
-			return Token{}, err
-		}
-		return Token{TrueToken, raw[:n]}, nil
+		return parseNextKeywordToken(raw, TrueToken)
 	case 'f':
-		n, err := parseNextKeywordToken(raw, falseBytes)
-		if err != nil {
-			return Token{}, err
-		}
-		return Token{FalseToken, raw[:n]}, nil
+		return parseNextKeywordToken(raw, FalseToken)
 	case 'n':
-		n, err := parseNextKeywordToken(raw, nullBytes)
-		if err != nil {
-			return Token{}, err
-		}
-		return Token{NullToken, raw[:n]}, nil
+		return parseNextKeywordToken(raw, NullToken)
 	default:
 		c := raw[0]
 		switch {
@@ -71,32 +55,44 @@ var (
 	nullBytes  = []byte("null")
 )
 
-func parseNextKeywordToken(raw, keyword []byte) (int, error) {
+func parseNextKeywordToken(raw []byte, typ TokenType) (Token, error) {
+	var keyword []byte
+	switch typ {
+	case TrueToken:
+		keyword = trueBytes
+	case FalseToken:
+		keyword = falseBytes
+	case NullToken:
+		keyword = nullBytes
+	default:
+		panic("unexpected token type: " + typ.String())
+	}
+
 	if len(raw) < len(keyword) {
-		return 0, io.ErrUnexpectedEOF
+		return Token{}, io.ErrUnexpectedEOF
 	}
 	for i, c := range keyword {
 		if c != raw[i] {
-			return 0, unexpectedCharWithinTokenError(raw[i])
+			return Token{}, unexpectedCharWithinTokenError(raw[i])
 		}
 	}
-	return len(keyword), nil
+	return Token{Type: typ, Raw: raw[:len(keyword)]}, nil
 }
 
-func parseNextStringToken(raw []byte) (int, error) {
+func parseNextStringToken(raw []byte) (Token, error) {
 	i := 1 // Already consumed the start quote char.
 	for {
 		if i >= len(raw) {
-			return 0, io.ErrUnexpectedEOF
+			return Token{}, io.ErrUnexpectedEOF
 		}
 		c := raw[i]
 		i++
 		if c == '"' {
-			return i, nil
+			return Token{Type: StringToken, Raw: raw[:i]}, nil
 		}
 		if c == '\\' {
 			if i >= len(raw) {
-				return 0, io.ErrUnexpectedEOF
+				return Token{}, io.ErrUnexpectedEOF
 			}
 			if raw[i] == 'u' {
 				i += 4 // Skip the next 4 hex digits.
