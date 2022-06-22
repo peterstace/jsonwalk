@@ -1,57 +1,8 @@
 package jsonwindow
 
 import (
-	"fmt"
 	"io"
 )
-
-type TokenType int
-
-const (
-	StringToken TokenType = iota + 1
-	NumberToken
-	CommaToken
-	ColonToken
-	OpenObjectToken
-	CloseObjectToken
-	OpenArrayToken
-	CloseArrayToken
-	TrueToken
-	FalseToken
-	NullToken
-	WhitespaceToken
-)
-
-func (t TokenType) String() string {
-	switch t {
-	case StringToken:
-		return "StringToken"
-	case NumberToken:
-		return "NumberToken"
-	case CommaToken:
-		return "CommaToken"
-	case ColonToken:
-		return "ColonToken"
-	case OpenObjectToken:
-		return "OpenObjectToken"
-	case CloseObjectToken:
-		return "CloseObjectToken"
-	case OpenArrayToken:
-		return "OpenArrayToken"
-	case CloseArrayToken:
-		return "CloseArrayToken"
-	case TrueToken:
-		return "TrueToken"
-	case FalseToken:
-		return "FalseToken"
-	case NullToken:
-		return "NullToken"
-	case WhitespaceToken:
-		return "WhitespaceToken"
-	default:
-		return fmt.Sprintf("TokenType(%d)", t)
-	}
-}
 
 type Token struct {
 	Type TokenType
@@ -113,6 +64,12 @@ func parseNextToken(raw []byte) (Token, error) {
 		}
 	}
 }
+
+var (
+	trueBytes  = []byte("true")
+	falseBytes = []byte("false")
+	nullBytes  = []byte("null")
+)
 
 func parseNextKeywordToken(raw, keyword []byte) (int, error) {
 	if len(raw) < len(keyword) {

@@ -14,12 +14,6 @@ func (e unexpectedInputError) Error() string {
 	return fmt.Sprintf("unexpected: %s", string([]byte{e.input}))
 }
 
-var (
-	trueBytes  = []byte("true")
-	falseBytes = []byte("false")
-	nullBytes  = []byte("null")
-)
-
 func parseKeyword(data, keyword []byte) ([]byte, error) {
 	if len(data) < len(keyword) {
 		return nil, io.ErrUnexpectedEOF
