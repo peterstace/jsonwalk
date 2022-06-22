@@ -8,8 +8,8 @@ import (
 	"github.com/peterstace/jsonwindow"
 )
 
-func TestTokenValidString(t *testing.T) {
-	for i, tc := range []string{
+var (
+	validStringTokens = []string{
 		`""`, `"hello"`,
 		`"\u1234"`, `"_\u1234"`, `"\u1234_"`,
 		`"\""`, `"\\"`, `"\/"`, `"\b"`, `"\f"`, `"\n"`, `"\r"`, `"\t"`,
@@ -21,7 +21,11 @@ func TestTokenValidString(t *testing.T) {
 		`"🍣"`, // 4 bytes
 		`"_£"`, `"_€"`, `"_🍣"`,
 		`"£_"`, `"€_"`, `"🍣_"`,
-	} {
+	}
+)
+
+func TestTokenValidString(t *testing.T) {
+	for i, tc := range validStringTokens {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			win := jsonwindow.New([]byte(tc))
 			got, err := win.NextToken()
@@ -36,6 +40,26 @@ func TestTokenValidString(t *testing.T) {
 			}
 			if _, err := win.NextToken(); err != io.EOF {
 				t.Errorf("expected io.EOF after error but got: %v", err)
+			}
+		})
+	}
+}
+
+func TestTokenTruncatedString(t *testing.T) {
+	for i, goodTok := range validStringTokens {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var badTokens []string
+			for j := 1; j < len(goodTok); j++ {
+				badTokens = append(badTokens, goodTok[:j])
+			}
+			for j, badTok := range badTokens {
+				t.Run(strconv.Itoa(j), func(t *testing.T) {
+					win := jsonwindow.New([]byte(badTok))
+					_, err := win.NextToken()
+					if err == nil {
+						t.Error("expected error but got nil")
+					}
+				})
 			}
 		})
 	}

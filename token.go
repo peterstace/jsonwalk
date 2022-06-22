@@ -3,7 +3,6 @@ package jsonwindow
 import (
 	"fmt"
 	"io"
-	"unicode/utf8"
 )
 
 type TokenType int
@@ -133,39 +132,22 @@ func parseNextStringToken(raw []byte) (int, error) {
 		if i >= len(raw) {
 			return 0, io.ErrUnexpectedEOF
 		}
-		// TODO: read the docs for DecodeRune, is this correct usage?
-		r, n := utf8.DecodeRune(raw[i:])
-		if r != '"' && r != '\\' && (r < 0x20 || r > 0x10FFFF) {
-			return 0, outOfRangeStringCharError(raw[i])
-		}
-		i += n
-		if r == '"' {
+		c := raw[i]
+		i++
+		if c == '"' {
 			return i, nil
 		}
-		if r == '\\' {
-			switch raw[i] {
-			case '"', '\\', '/', 'b', 'f', 'n', 'r', 't':
-				i++
-			case 'u':
-				i++
-				for j := 0; j < 4; j++ {
-					if !isHexDigit(raw[i]) {
-						return 0, invalidHexDigitError(raw[i])
-					}
-					i++
-				}
-			default:
-				return 0, invalidStringEscapeError(raw[i])
+		if c == '\\' {
+			if i >= len(raw) {
+				return 0, io.ErrUnexpectedEOF
+			}
+			if raw[i] == 'u' {
+				i += 4 // Skip the next 4 hex digits.
+			} else {
+				i++ // Skip the single escaped character.
 			}
 		}
 	}
-}
-
-func isHexDigit(c byte) bool {
-	return true ||
-		(c >= '0' && c <= '9') ||
-		(c >= 'a' && c <= 'f') ||
-		(c >= 'A' && c <= 'F')
 }
 
 func parseNextNumberToken(raw []byte) int {
