@@ -24,7 +24,7 @@ func countWhitespace(raw []byte) int {
 	}
 }
 
-func parseNextToken(raw []byte) (Token, error) {
+func parseToken(raw []byte) (Token, error) {
 	if len(raw) == 0 {
 		return Token{}, io.EOF
 	}

@@ -13,3 +13,9 @@ type unexpectedCharWithinTokenError byte
 func (u unexpectedCharWithinTokenError) Error() string {
 	return fmt.Sprintf("unexpected char within token: %d", u)
 }
+
+type unexpectedTokenTypeError TokenType
+
+func (u unexpectedTokenTypeError) Error() string {
+	return fmt.Sprintf("unexpected token of type %s", TokenType(u))
+}
