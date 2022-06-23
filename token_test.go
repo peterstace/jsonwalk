@@ -94,32 +94,6 @@ func TestTokenValidNumber(t *testing.T) {
 	}
 }
 
-func TestTokenWhitespace(t *testing.T) {
-	for i, tc := range []string{
-		" ", "\t", "\r", "\n",
-		"  ", "\t\t", "\r\r", "\n\n",
-		" \t", " \r", " \n",
-		"\t ", "\r ", "\n ",
-	} {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			win := jsonwindow.New([]byte(tc))
-			got, err := win.NextToken()
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if string(got.Raw) != tc {
-				t.Errorf("got: %v want: %v", string(got.Raw), tc)
-			}
-			if got.Type != jsonwindow.WhitespaceToken {
-				t.Errorf("expected whitespace token but got: %v", got.Type)
-			}
-			if _, err := win.NextToken(); err != io.EOF {
-				t.Errorf("expected io.EOF after error but got: %v", err)
-			}
-		})
-	}
-}
-
 func TestTokenDelim(t *testing.T) {
 	for c, typ := range map[byte]jsonwindow.TokenType{
 		':': jsonwindow.ColonToken,

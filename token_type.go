@@ -16,7 +16,6 @@ const (
 	TrueToken
 	FalseToken
 	NullToken
-	WhitespaceToken
 )
 
 func (t TokenType) String() string {
@@ -43,8 +42,6 @@ func (t TokenType) String() string {
 		return "FalseToken"
 	case NullToken:
 		return "NullToken"
-	case WhitespaceToken:
-		return "WhitespaceToken"
 	default:
 		return fmt.Sprintf("TokenType(%d)", t)
 	}

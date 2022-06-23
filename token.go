@@ -9,6 +9,21 @@ type Token struct {
 	Raw  []byte
 }
 
+func countWhitespace(raw []byte) int {
+	i := 0
+	for {
+		if i >= len(raw) {
+			return i
+		}
+		switch raw[i] {
+		case ' ', '\t', '\n', '\r':
+			i++
+		default:
+			return i
+		}
+	}
+}
+
 func parseNextToken(raw []byte) (Token, error) {
 	if len(raw) == 0 {
 		return Token{}, io.EOF
@@ -36,16 +51,11 @@ func parseNextToken(raw []byte) (Token, error) {
 		return parseNextKeywordToken(raw, NullToken)
 	default:
 		c := raw[0]
-		switch {
-		case isStartNumberChar(c):
-			n := parseNextNumberToken(raw)
-			return Token{NumberToken, raw[:n]}, nil
-		case isWhitespaceChar(c):
-			n := parseNextWhitespaceToken(raw)
-			return Token{WhitespaceToken, raw[:n]}, nil
-		default:
+		if !isStartNumberChar(c) {
 			return Token{}, unexpectedStartOfTokenError(c)
 		}
+		n := parseNextNumberToken(raw)
+		return Token{NumberToken, raw[:n]}, nil
 	}
 }
 
@@ -127,23 +137,4 @@ func isNumberChar(c byte) bool {
 		c == 'E' ||
 		c == 'e' ||
 		c == '+'
-}
-
-func parseNextWhitespaceToken(raw []byte) int {
-	i := 1 // Already checked the leading char.
-	for {
-		if i >= len(raw) || !isWhitespaceChar(raw[i]) {
-			return i
-		}
-		i++
-	}
-}
-
-func isWhitespaceChar(c byte) bool {
-	switch c {
-	case ' ', '\t', '\n', '\r':
-		return true
-	default:
-		return false
-	}
 }

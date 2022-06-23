@@ -21,22 +21,15 @@ var (
 	}
 )
 
-func whitespace(raw string) jsonwindow.Token {
-	return jsonwindow.Token{
-		Type: jsonwindow.WhitespaceToken,
-		Raw:  []byte(raw),
-	}
-}
-
 func TestNextToken(t *testing.T) {
 	for i, tc := range []struct {
 		input string
 		want  []jsonwindow.Token
 	}{
 		{`{}`, []jsonwindow.Token{startObj, closeObj}},
-		{`{ }`, []jsonwindow.Token{startObj, whitespace(" "), closeObj}},
-		{` {}`, []jsonwindow.Token{whitespace(" "), startObj, closeObj}},
-		{`{} `, []jsonwindow.Token{startObj, closeObj, whitespace(" ")}},
+		{`{ }`, []jsonwindow.Token{startObj, closeObj}},
+		{` {}`, []jsonwindow.Token{startObj, closeObj}},
+		{`{} `, []jsonwindow.Token{startObj, closeObj}},
 	} {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Log("input:")
