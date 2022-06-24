@@ -27,7 +27,7 @@ var _TokenType_index = [...]uint8{0, 11, 22, 32, 42, 57, 73, 87, 102, 111, 121, 
 
 func (i TokenType) String() string {
 	i -= 1
-	if i < 0 || i >= TokenType(len(_TokenType_index)-1) {
+	if i >= TokenType(len(_TokenType_index)-1) {
 		return "TokenType(" + strconv.FormatInt(int64(i+1), 10) + ")"
 	}
 	return _TokenType_name[_TokenType_index[i]:_TokenType_index[i+1]]

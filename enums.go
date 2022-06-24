@@ -2,7 +2,7 @@ package jsonwindow
 
 //go:generate stringer -type TokenType,ValueType -output enums_string.go
 
-type TokenType int
+type TokenType byte
 
 const (
 	StringToken TokenType = iota + 1
