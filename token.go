@@ -28,33 +28,12 @@ func peekTokenType(raw []byte) (TokenType, error) {
 	if len(raw) == 0 {
 		return 0, io.EOF
 	}
-	switch c := raw[0]; c {
-	case ',':
-		return CommaToken, nil
-	case ':':
-		return ColonToken, nil
-	case '{':
-		return OpenObjectToken, nil
-	case '}':
-		return CloseObjectToken, nil
-	case '[':
-		return OpenArrayToken, nil
-	case ']':
-		return CloseArrayToken, nil
-	case '"':
-		return StringToken, nil
-	case 't':
-		return TrueToken, nil
-	case 'f':
-		return FalseToken, nil
-	case 'n':
-		return NullToken, nil
-	default:
-		if isStartNumberChar(c) {
-			return NumberToken, nil
-		}
+	c := raw[0]
+	tt := peekTokenLUT[c]
+	if tt == 0 {
 		return 0, unexpectedStartOfTokenError(c)
 	}
+	return tt, nil
 }
 
 func parseToken(raw []byte) (Token, error) {
