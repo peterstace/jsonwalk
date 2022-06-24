@@ -24,38 +24,69 @@ func countWhitespace(raw []byte) int {
 	}
 }
 
-func parseToken(raw []byte) (Token, error) {
+func peekTokenType(raw []byte) (TokenType, error) {
 	if len(raw) == 0 {
-		return Token{}, io.EOF
+		return 0, io.EOF
 	}
-	switch raw[0] {
+	switch c := raw[0]; c {
 	case ',':
-		return Token{CommaToken, raw[:1]}, nil
+		return CommaToken, nil
 	case ':':
-		return Token{ColonToken, raw[:1]}, nil
+		return ColonToken, nil
 	case '{':
-		return Token{OpenObjectToken, raw[:1]}, nil
+		return OpenObjectToken, nil
 	case '}':
-		return Token{CloseObjectToken, raw[:1]}, nil
+		return CloseObjectToken, nil
 	case '[':
-		return Token{OpenArrayToken, raw[:1]}, nil
+		return OpenArrayToken, nil
 	case ']':
-		return Token{CloseArrayToken, raw[:1]}, nil
+		return CloseArrayToken, nil
 	case '"':
-		return parseNextStringToken(raw)
+		return StringToken, nil
 	case 't':
-		return parseNextKeywordToken(raw, TrueToken)
+		return TrueToken, nil
 	case 'f':
-		return parseNextKeywordToken(raw, FalseToken)
+		return FalseToken, nil
 	case 'n':
+		return NullToken, nil
+	default:
+		if isStartNumberChar(c) {
+			return NumberToken, nil
+		}
+		return 0, unexpectedStartOfTokenError(c)
+	}
+}
+
+func parseToken(raw []byte) (Token, error) {
+	typ, err := peekTokenType(raw)
+	if err != nil {
+		return Token{}, err
+	}
+	switch typ {
+	case StringToken:
+		return parseNextStringToken(raw)
+	case NumberToken:
+		return parseNextNumberToken(raw), nil
+	case CommaToken:
+		return Token{CommaToken, raw[:1]}, nil
+	case ColonToken:
+		return Token{ColonToken, raw[:1]}, nil
+	case OpenObjectToken:
+		return Token{OpenObjectToken, raw[:1]}, nil
+	case CloseObjectToken:
+		return Token{CloseObjectToken, raw[:1]}, nil
+	case OpenArrayToken:
+		return Token{OpenArrayToken, raw[:1]}, nil
+	case CloseArrayToken:
+		return Token{CloseArrayToken, raw[:1]}, nil
+	case TrueToken:
+		return parseNextKeywordToken(raw, TrueToken)
+	case FalseToken:
+		return parseNextKeywordToken(raw, FalseToken)
+	case NullToken:
 		return parseNextKeywordToken(raw, NullToken)
 	default:
-		c := raw[0]
-		if !isStartNumberChar(c) {
-			return Token{}, unexpectedStartOfTokenError(c)
-		}
-		n := parseNextNumberToken(raw)
-		return Token{NumberToken, raw[:n]}, nil
+		panic("unknown token type: " + typ.String())
 	}
 }
 
@@ -113,11 +144,11 @@ func parseNextStringToken(raw []byte) (Token, error) {
 	}
 }
 
-func parseNextNumberToken(raw []byte) int {
+func parseNextNumberToken(raw []byte) Token {
 	i := 1 // Already checked the leading char.
 	for {
 		if i >= len(raw) || !isNumberChar(raw[i]) {
-			return i
+			return Token{NumberToken, raw[:i]}
 		}
 		i++
 	}

@@ -19,16 +19,10 @@ func (w *Window) NextToken() (Token, error) {
 	return tok, nil
 }
 
-func (w *Window) PeekToken() (Token, error) {
+func (w *Window) PeekTokenType() (TokenType, error) {
 	idx := w.cur + countWhitespace(w.buf[w.cur:])
-	tok, err := parseToken(w.buf[idx:])
-	if err != nil {
-		return Token{}, err
-	}
-	return tok, nil
+	return peekTokenType(w.buf[idx:])
 }
-
-// TODO: PeekTokenType() (TokenType, error)
 
 func (w *Window) NextValue() (Value, error) {
 	tok, err := w.NextToken()
@@ -63,11 +57,11 @@ func (w *Window) completeObject(fn func(keyToken, value []byte) error) ([]byte, 
 	start := w.cur - 1
 
 	// Check for empty object.
-	cls, err := w.PeekToken()
+	cls, err := w.PeekTokenType()
 	if err != nil {
 		return nil, err
 	}
-	if cls.Type == CloseObjectToken {
+	if cls == CloseObjectToken {
 		if _, err := w.NextToken(); err != nil {
 			return nil, err
 		}
@@ -138,11 +132,11 @@ func (w *Window) completeArray(fn func(idx int, value []byte) error) ([]byte, er
 	start := w.cur - 1
 
 	// Check for empty array.
-	cls, err := w.PeekToken()
+	cls, err := w.PeekTokenType()
 	if err != nil {
 		return nil, err
 	}
-	if cls.Type == CloseArrayToken {
+	if cls == CloseArrayToken {
 		if _, err := w.NextToken(); err != nil {
 			return nil, err
 		}
