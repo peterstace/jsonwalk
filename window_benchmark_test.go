@@ -11,8 +11,7 @@ import (
 )
 
 func BenchmarkWindowNextValue(b *testing.B) {
-	fname, ok := os.LookupEnv("BIG_ZIPPED_JSON_OBJ")
-	assertTrue(b, ok)
+	const fname = "./testdata/big.zip"
 	zipped, err := os.ReadFile(fname)
 	assertNoError(b, err)
 	zr, err := zip.NewReader(bytes.NewReader(zipped), int64(len(zipped)))
