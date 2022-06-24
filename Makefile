@@ -11,4 +11,4 @@ stringer:
 
 .PHONE: bench
 bench:
-	go test -run=^\$$ -bench=. -benchmem -cpuprofile profile.cpu -memprofile profile.mem
+	go test -run=^\$$ -bench=. -benchmem -cpuprofile profile.cpu -memprofile profile.mem -benchtime=10s
