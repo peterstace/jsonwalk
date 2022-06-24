@@ -15,13 +15,17 @@ func countWhitespace(raw []byte) int {
 		if i >= len(raw) {
 			return i
 		}
-		switch raw[i] {
-		case ' ', '\t', '\n', '\r':
-			i++
-		default:
+		if !isWhitespace(raw[i]) {
 			return i
 		}
+		i++
 	}
+}
+
+func isWhitespace(b byte) bool {
+	// Magic has bits 9, 10, 13, and 32 set.
+	const magic = 0x0000000100002600
+	return ((1 << b) & magic) != 0
 }
 
 func peekTokenType(raw []byte) (TokenType, error) {
