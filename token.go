@@ -10,22 +10,19 @@ type Token struct {
 }
 
 func countWhitespace(raw []byte) int {
+	// magic has bits 9, 10, 13, and 32 set.
+	const magic = 0x0000000100002600
+
 	i := 0
 	for {
 		if i >= len(raw) {
 			return i
 		}
-		if !isWhitespace(raw[i]) {
+		if ((1 << raw[i]) & magic) == 0 {
 			return i
 		}
 		i++
 	}
-}
-
-func isWhitespace(b byte) bool {
-	// Magic has bits 9, 10, 13, and 32 set.
-	const magic = 0x0000000100002600
-	return ((1 << b) & magic) != 0
 }
 
 func peekTokenType(raw []byte) (TokenType, error) {
