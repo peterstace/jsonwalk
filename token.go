@@ -24,40 +24,37 @@ func countWhitespace(raw []byte) int {
 	}
 }
 
-var peekLookup = map[byte]TokenType{
-	',': CommaToken,
-	':': ColonToken,
-	'{': OpenObjectToken,
-	'}': CloseObjectToken,
-	'[': OpenArrayToken,
-	']': CloseArrayToken,
-	'"': StringToken,
-	't': TrueToken,
-	'f': FalseToken,
-	'n': NullToken,
-	'-': NumberToken,
-	'0': NumberToken,
-	'1': NumberToken,
-	'2': NumberToken,
-	'3': NumberToken,
-	'4': NumberToken,
-	'5': NumberToken,
-	'6': NumberToken,
-	'7': NumberToken,
-	'8': NumberToken,
-	'9': NumberToken,
-}
-
 func peekTokenType(raw []byte) (TokenType, error) {
 	if len(raw) == 0 {
 		return 0, io.EOF
 	}
-	c := raw[0]
-	typ, ok := peekLookup[c]
-	if !ok {
+	switch c := raw[0]; c {
+	case ',':
+		return CommaToken, nil
+	case ':':
+		return ColonToken, nil
+	case '{':
+		return OpenObjectToken, nil
+	case '}':
+		return CloseObjectToken, nil
+	case '[':
+		return OpenArrayToken, nil
+	case ']':
+		return CloseArrayToken, nil
+	case '"':
+		return StringToken, nil
+	case 't':
+		return TrueToken, nil
+	case 'f':
+		return FalseToken, nil
+	case 'n':
+		return NullToken, nil
+	default:
+		if isStartNumberChar(c) {
+			return NumberToken, nil
+		}
 		return 0, unexpectedStartOfTokenError(c)
 	}
-	return typ, nil
 }
 
 func parseToken(raw []byte) (Token, error) {
