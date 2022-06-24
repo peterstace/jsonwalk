@@ -131,11 +131,13 @@ func TestNextValue(t *testing.T) {
 		{jsonwindow.BooleanValue, `false`},
 		{jsonwindow.StringValue, `"hello"`},
 		{jsonwindow.NumberValue, `123`},
+		{jsonwindow.ArrayValue, `[]`},
 		{jsonwindow.ArrayValue, `[123]`},
 		{jsonwindow.ArrayValue, `[123,456]`},
 		{jsonwindow.ArrayValue, `[123,"foo"]`},
 		{jsonwindow.ArrayValue, `[[123]]`},
 		{jsonwindow.ArrayValue, `[{"x":"y"}]`},
+		{jsonwindow.ObjectValue, `{}`},
 		{jsonwindow.ObjectValue, `{"k":123}`},
 		{jsonwindow.ObjectValue, `{"k":123,"n":456}`},
 		{jsonwindow.ObjectValue, `{"k":123,"n":"foo"}`},
@@ -144,10 +146,14 @@ func TestNextValue(t *testing.T) {
 	} {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			input := []byte("[" + tc.raw + "]")
+			t.Log("input:")
+			logBytes(t, input)
 			win := jsonwindow.New(input)
+
 			open, err := win.NextToken()
 			assertNoError(t, err)
 			expectEq(t, jsonwindow.OpenArrayToken, open.Type)
+
 			got, err := win.NextValue()
 			assertNoError(t, err)
 			want := jsonwindow.Value{
@@ -155,9 +161,111 @@ func TestNextValue(t *testing.T) {
 				Raw:  []byte(tc.raw),
 			}
 			expectDeepEq(t, want, got)
+
 			cls, err := win.NextToken()
 			assertNoError(t, err)
 			expectEq(t, jsonwindow.CloseArrayToken, cls.Type)
+		})
+	}
+}
+
+func TestVisitNextObject(t *testing.T) {
+	for i, tc := range []struct {
+		raw      string
+		wantKeys []string
+		wantVals []string
+	}{
+		{
+			`{}`,
+			nil,
+			nil,
+		},
+		{
+			`{"x":"y"}`,
+			[]string{`"x"`},
+			[]string{`"y"`},
+		},
+		{
+			`{"x":"y","z":"w"}`,
+			[]string{`"x"`, `"z"`},
+			[]string{`"y"`, `"w"`},
+		},
+		{
+			`{"k1":[1,2,3],"k2":{"x":"y","z":"w"}}`,
+			[]string{`"k1"`, `"k2"`},
+			[]string{`[1,2,3]`, `{"x":"y","z":"w"}`},
+		},
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			input := []byte("[" + tc.raw + "]")
+			win := jsonwindow.New(input)
+
+			open, err := win.NextToken()
+			assertNoError(t, err)
+			expectEq(t, jsonwindow.OpenArrayToken, open.Type)
+
+			var gotKeys, gotVals []string
+			err = win.WalkNextObject(func(key, val []byte) error {
+				gotKeys = append(gotKeys, string(key))
+				gotVals = append(gotVals, string(val))
+				return nil
+			})
+			assertNoError(t, err)
+			expectDeepEq(t, tc.wantKeys, gotKeys)
+			expectDeepEq(t, tc.wantVals, gotVals)
+
+			cls, err := win.NextToken()
+			assertNoError(t, err)
+			expectEq(t, jsonwindow.CloseArrayToken, cls.Type)
+		})
+	}
+}
+
+func TestVisitNextArray(t *testing.T) {
+	for i, tc := range []struct {
+		raw      string
+		wantVals []string
+	}{
+		{
+			`[]`,
+			nil,
+		},
+		{
+			`[123]`,
+			[]string{`123`},
+		},
+		{
+			`[123,"abc"]`,
+			[]string{`123`, `"abc"`},
+		},
+		{
+			`[123,"abc",["xx",{},{"x":"x"}]]`,
+			[]string{`123`, `"abc"`, `["xx",{},{"x":"x"}]`},
+		},
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			input := []byte(`{"array":` + tc.raw + "}")
+			win := jsonwindow.New(input)
+
+			var gotVals []string
+			gotIdxs := []int{} // For deep equal comparison
+			err := win.WalkNextObject(func(keyToken, value []byte) error {
+				assertDeepEq(t, []byte(`"array"`), keyToken)
+				inner := jsonwindow.New(value)
+				return inner.WalkNextArray(func(idx int, value []byte) error {
+					gotIdxs = append(gotIdxs, idx)
+					gotVals = append(gotVals, string(value))
+					return nil
+				})
+			})
+			assertNoError(t, err)
+
+			wantIdxs := make([]int, len(tc.wantVals))
+			for j := range wantIdxs {
+				wantIdxs[j] = j
+			}
+			expectDeepEq(t, wantIdxs, gotIdxs)
+			expectDeepEq(t, tc.wantVals, gotVals)
 		})
 	}
 }
@@ -200,6 +308,15 @@ func expectDeepEq[T any](t *testing.T, want, got T) {
 		t.Logf("want: %v", want)
 		t.Logf("got: %v", got)
 		t.Errorf("not deep equal")
+	}
+}
+
+func assertDeepEq[T any](t *testing.T, want, got T) {
+	t.Helper()
+	if !reflect.DeepEqual(want, got) {
+		t.Logf("want: %v", want)
+		t.Logf("got: %v", got)
+		t.Fatalf("not deep equal")
 	}
 }
 
