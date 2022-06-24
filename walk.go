@@ -48,32 +48,14 @@ func parseValue(raw []byte) (int, error) {
 		str, err := parseString(raw)
 		return len(str), err
 	case 't':
-		// TODO: abstract keywords
-		if len(raw) < len("true") {
-			return 0, io.ErrUnexpectedEOF
-		}
-		if string(raw[:len("true")]) != "true" {
-			return 0, fmt.Errorf("'t' must be followed by 'rue'")
-		}
-		return len("true"), nil
+		err := parseExact("rue", raw[1:])
+		return len("true"), err
 	case 'f':
-		// TODO: abstract keywords
-		if len(raw) < len("false") {
-			return 0, io.ErrUnexpectedEOF
-		}
-		if string(raw[:len("false")]) != "false" {
-			return 0, fmt.Errorf("'f' must be followed by 'alse'")
-		}
-		return len("false"), nil
+		err := parseExact("alse", raw[1:])
+		return len("false"), err
 	case 'n':
-		// TODO: abstract keywords
-		if len(raw) < len("null") {
-			return 0, io.ErrUnexpectedEOF
-		}
-		if string(raw[:len("null")]) != "null" {
-			return 0, fmt.Errorf("'n' must be followed by 'ull'")
-		}
-		return len("null"), nil
+		err := parseExact("ull", raw[1:])
+		return len("null"), err
 	default:
 		// TODO: could put number start chars in their own case?
 		if isNumberStartChar(raw[0]) {
@@ -247,4 +229,15 @@ func isNumberContinueChar(c byte) bool {
 		c == 'e' ||
 		c == 'E' ||
 		c == '+'
+}
+
+// parseExact checks if the raw has the exact given prefix.
+func parseExact(exact string, raw []byte) error {
+	if len(raw) < len(exact) {
+		return io.ErrUnexpectedEOF
+	}
+	if string(raw[:len(exact)]) != exact {
+		return fmt.Errorf("expected '%s' to follow", exact)
+	}
+	return nil
 }
