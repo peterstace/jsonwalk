@@ -244,6 +244,7 @@ func isNumberContinueChar(c byte) bool {
 		c == '.' ||
 		c == 'e' ||
 		c == 'E' ||
+		c == '-' ||
 		c == '+'
 }
 
