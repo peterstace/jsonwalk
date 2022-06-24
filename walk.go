@@ -6,8 +6,7 @@ import (
 )
 
 func WalkObject(raw []byte, fn func(key, val []byte) error) error {
-	i := 0
-	i += countWS(raw)
+	i := countWS(raw)
 	if i >= len(raw) {
 		return io.ErrUnexpectedEOF
 	}
@@ -19,6 +18,18 @@ func WalkObject(raw []byte, fn func(key, val []byte) error) error {
 	return err
 }
 
+// countWS counts the number of chars making the whitespace prefix of raw.
+//
+// Note on whitespace handling:
+//
+//  - Whitespace should be consumed after each token/structure rather than
+//  before each token/structure.
+//
+//  - The exception is handling whitespace at the start of any exported
+//  function.
+//
+//  - functions with `parse` or `continue` prefixes don't strip whitespace at
+//  the end.
 func countWS(raw []byte) int {
 	i := 0
 	for {
@@ -34,8 +45,15 @@ func countWS(raw []byte) int {
 	}
 }
 
-// assume: raw is non-empty and WS stripped
+// assume: raw has WS stripped
 func parseValue(raw []byte) (int, error) {
+	// TODO: use if statements rather than case to be more explicit about
+	// ordering?
+	// TODO: could use LUT rather than switch?
+	// TODO: re-order cases for best speed
+	if len(raw) == 0 {
+		return 0, io.ErrUnexpectedEOF
+	}
 	switch raw[0] {
 	case '{':
 		n, err := continueObject(raw[1:], nil)
@@ -68,10 +86,10 @@ func parseValue(raw []byte) (int, error) {
 }
 
 // assume: '{' has already been consumed
+// assume: whitespace _not_ stripped after the '{'
 func continueObject(raw []byte, fn func(key, val []byte) error) (int, error) {
 	// Check for empty object (closing curly):
-	i := 0
-	i += countWS(raw[i:])
+	i := countWS(raw)
 	if i >= len(raw) {
 		return 0, io.ErrUnexpectedEOF
 	}
@@ -81,16 +99,15 @@ func continueObject(raw []byte, fn func(key, val []byte) error) (int, error) {
 	}
 
 	for {
-		// Consume key. It must be a string. Note that whitespace has already
-		// been stripped (either before the loop or at the end of the loop).
+		// Consume key. It must be a string.
 		key, err := parseString(raw[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += len(key)
+		i += countWS(raw[i:])
 
 		// Consume the colon separating the key from the value.
-		i += countWS(raw[i:])
 		if i >= len(raw) {
 			return 0, io.ErrUnexpectedEOF
 		}
@@ -98,25 +115,26 @@ func continueObject(raw []byte, fn func(key, val []byte) error) (int, error) {
 			return 0, fmt.Errorf("':' must come after key in JSON object")
 		}
 		i++
+		i += countWS(raw[i:])
 
 		// Consume the value. It doesn't matter what type of value it is.
-		i += countWS(raw[i:])
 		val, err := parseValue(raw[i:])
 		if err != nil {
 			return 0, err
 		}
+		rawVal := raw[i : i+val]
+		i += val
+		i += countWS(raw[i:])
 
 		// Use callback if provided.
 		if fn != nil {
-			if err := fn(key, raw[i:i+val]); err != nil {
+			if err := fn(key, rawVal); err != nil {
 				return 0, err
 			}
 		}
-		i += val
 
 		// Check to see if we're at the end of the object, of if there are
 		// more key/value pairs.
-		i += countWS(raw[:i])
 		if i >= len(raw) {
 			return 0, io.ErrUnexpectedEOF
 		}
@@ -134,11 +152,9 @@ func continueObject(raw []byte, fn func(key, val []byte) error) (int, error) {
 }
 
 // assume: '[' has already been consumed
-// TODO: give callback
 func continueArray(raw []byte) (int, error) {
 	// Check for empty array (closing square):
-	i := 0
-	i += countWS(raw[i:])
+	i := countWS(raw)
 	if i >= len(raw) {
 		return 0, io.ErrUnexpectedEOF
 	}
@@ -148,18 +164,18 @@ func continueArray(raw []byte) (int, error) {
 	}
 
 	for {
-		// Consume the value. It doesn't matter what type of value it is. Note:
-		// whitespace has already been stripped (either before the loop, or
-		// before returning to the top of the loop).
+		// Consume the value. It doesn't matter what type of value it is.
 		val, err := parseValue(raw[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += val
+		i += countWS(raw[i:])
+
+		// TODO: give callback
 
 		// Check to see if we're at the end of the array, of if there are more
 		// values.
-		i += countWS(raw[:i])
 		if i >= len(raw) {
 			return 0, io.ErrUnexpectedEOF
 		}
