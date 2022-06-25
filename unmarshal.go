@@ -11,6 +11,8 @@ func UnmarshalStringToken(strTok []byte) ([]byte, error) {
 		return nil, fmt.Errorf("invalid string token: must start and end with quote char")
 	}
 
+	// TODO: outline slow path?
+
 	// If the string token doesn't use any escapes, we can just strip off the
 	// quotes.
 	fastPath := true
