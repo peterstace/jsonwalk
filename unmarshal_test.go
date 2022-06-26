@@ -47,7 +47,7 @@ func TestUnmarshalValidStringToken(t *testing.T) {
 	} {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			got, err := jsonwindow.UnmarshalStringToken([]byte(tc.input))
-			assertNoError(t, err)
+			mustBeNoError(t, err)
 			expectEq(t, tc.want, string(got))
 		})
 	}
