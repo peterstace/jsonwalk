@@ -3,15 +3,21 @@ package jsonwindow_test
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/peterstace/jsonwindow"
 )
 
-func BenchmarkWalkObject(b *testing.B) {
-	const fname = "./testdata/big.zip"
+func BenchmarkWalkObjectCustom(b *testing.B) {
+	fname := os.Getenv("JSON_TEST_FILE")
+	if fname == "" {
+		b.Skip("JSON_TEST_FILE not set")
+	}
 	zipped, err := os.ReadFile(fname)
 	mustBeNoError(b, err)
 	zr, err := zip.NewReader(bytes.NewReader(zipped), int64(len(zipped)))
@@ -22,9 +28,60 @@ func BenchmarkWalkObject(b *testing.B) {
 	raw, err := io.ReadAll(zf)
 	zf.Close()
 
+	b.SetBytes(int64(len(raw)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		err := jsonwindow.WalkObject(raw, nil)
 		mustBeNoError(b, err)
 	}
+}
+
+func BenchmarkWhitespace(b *testing.B) {
+	const n = 10_000
+	strs := make([]string, n)
+	for i := 0; i < n; i++ {
+		strs[i] = strings.Repeat("abc", i%10)
+	}
+	raw, err := json.Marshal(map[string][]string{"": strs})
+	mustBeNoError(b, err)
+
+	for desc, fn := range map[string]func(t testing.TB, buf []byte) []byte{
+		"compact":          func(_ testing.TB, buf []byte) []byte { return buf },
+		"python_no_indent": pythonNoIndent,
+		"python_indent":    pythonIndent,
+	} {
+		b.Run(desc, func(b *testing.B) {
+			alt := fn(b, raw)
+			b.SetBytes(int64(len(alt)))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				err := jsonwindow.WalkObject(alt, nil)
+				mustBeNoError(b, err)
+			}
+		})
+	}
+
+}
+
+func pythonNoIndent(t testing.TB, buf []byte) []byte {
+	return pythonFilter(t, buf, true)
+}
+
+func pythonIndent(t testing.TB, buf []byte) []byte {
+	return pythonFilter(t, buf, false)
+}
+
+func pythonFilter(t testing.TB, buf []byte, noIndent bool) []byte {
+	args := []string{"-m", "json.tool"}
+	if noIndent {
+		args = append(args, "--no-indent")
+	}
+	cmd := exec.Command("python", args...)
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stdin = bytes.NewReader(buf)
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("could not run python command: %v %v", err, stdout.String())
+	}
+	return stdout.Bytes()
 }
