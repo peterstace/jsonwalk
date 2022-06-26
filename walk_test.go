@@ -53,7 +53,7 @@ func TestWalkObject(t *testing.T) {
 				gotVals = append(gotVals, string(val))
 				return nil
 			})
-			assertNoError(t, err)
+			mustBeNoError(t, err)
 			expectDeepEq(t, tc.wantKeys, gotKeys)
 			expectDeepEq(t, tc.wantVals, gotVals)
 		})
@@ -117,7 +117,7 @@ func TestWalkObjectSingleValue(t *testing.T) {
 				roundtrip = string(val)
 				return nil
 			})
-			assertNoError(t, err)
+			mustBeNoError(t, err)
 			expectEq(t, val, roundtrip)
 		})
 	}
@@ -137,7 +137,7 @@ func TestWalkObjectWhitespace(t *testing.T) {
 			var gotKeys, gotVals []string
 			err := jsonwindow.WalkObject(withWS, func(keyTok, val []byte) error {
 				key, err := jsonwindow.UnmarshalStringToken(keyTok)
-				assertNoError(t, err)
+				mustBeNoError(t, err)
 				gotKeys = append(gotKeys, string(key))
 				gotVals = append(gotVals, string(val))
 				return nil
@@ -145,7 +145,7 @@ func TestWalkObjectWhitespace(t *testing.T) {
 
 			var wantMap map[string]json.RawMessage
 			err = json.Unmarshal(withWS, &wantMap)
-			assertNoError(t, err)
+			mustBeNoError(t, err)
 			var wantPairs [][2]string
 			for k, v := range wantMap {
 				wantPairs = append(wantPairs, [2]string{k, string(v)})

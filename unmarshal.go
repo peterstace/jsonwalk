@@ -8,6 +8,7 @@ import (
 func UnmarshalStringToken(strTok []byte) ([]byte, error) {
 	n := len(strTok)
 	if strTok[0] != '"' || strTok[n-1] != '"' {
+		// TODO: bug here -- should check length of strTok first.
 		return nil, fmt.Errorf("invalid string token: must start and end with quote char")
 	}
 
