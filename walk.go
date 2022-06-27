@@ -74,9 +74,8 @@ func parseValue(raw []byte) (int, error) {
 		n, err := continueArray(raw[1:])
 		return 1 + n, err
 	case '"':
-		// TODO: continueString rather than parseString
-		str, err := parseString(raw)
-		return len(str), err
+		n, err := continueString(raw[1:])
+		return 1 + n, err
 	case 't':
 		err := parseExact("rue", raw[1:])
 		return len("true"), err
@@ -112,11 +111,19 @@ func continueObject(raw []byte, fn func(key, val []byte) error) (int, error) {
 
 	for {
 		// Consume key. It must be a string.
-		key, err := parseString(raw[i:])
+		if i >= len(raw) {
+			return 0, io.ErrUnexpectedEOF
+		}
+		if raw[i] != '"' {
+			return 0, fmt.Errorf("JSON string must begin with '\"'")
+		}
+		i++
+		keyN, err := continueString(raw[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += len(key)
+		key := raw[i-1 : i+keyN]
+		i += keyN
 		i += countWS(raw[i:])
 
 		// Consume the colon separating the key from the value.
@@ -204,27 +211,20 @@ func continueArray(raw []byte) (int, error) {
 	}
 }
 
-func parseString(raw []byte) ([]byte, error) {
-	if len(raw) == 0 {
-		return nil, io.ErrUnexpectedEOF
-	}
-	if raw[0] != '"' {
-		return nil, fmt.Errorf("JSON string must start with '\"'")
-	}
-
-	i := 1
+func continueString(raw []byte) (int, error) {
+	i := 0
 	for {
 		if i >= len(raw) {
-			return nil, io.ErrUnexpectedEOF
+			return 0, io.ErrUnexpectedEOF
 		}
 		c := raw[i]
 		i++
 		if c == '"' {
-			return raw[:i], nil
+			return i, nil
 		}
 		if c == '\\' {
 			if i >= len(raw) {
-				return nil, io.ErrUnexpectedEOF
+				return 0, io.ErrUnexpectedEOF
 			}
 			if raw[i] == 'u' {
 				i += 4 // Skip the next 4 hex digits.
