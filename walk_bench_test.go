@@ -103,3 +103,19 @@ func BenchmarkWalkObjectKeyword(b *testing.B) {
 		mustBeNoError(b, err)
 	}
 }
+
+func BenchmarkWalkObjectNumbers(b *testing.B) {
+	const n = 10_000
+	vals := make([]float64, n)
+	for i := 0; i < n; i++ {
+		vals[i] = float64(i%1024) / 1024
+	}
+	raw, err := json.Marshal(map[string]any{"": vals})
+	mustBeNoError(b, err)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := jsonwindow.WalkObject(raw, nil)
+		mustBeNoError(b, err)
+	}
+}
