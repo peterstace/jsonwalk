@@ -82,12 +82,10 @@ func parseValue(raw []byte) (int, error) {
 		return parseKeyword("false", raw)
 	case 'n':
 		return parseKeyword("null", raw)
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+		n := continueNumber(raw[1:])
+		return n + 1, nil
 	default:
-		// TODO: could put number start chars in their own case?
-		if isNumberStartChar(raw[0]) {
-			n := continueNumber(raw[1:])
-			return n + 1, nil
-		}
 		return 0, fmt.Errorf("JSON value must start with" +
 			" '{', '[', '\"', 't', 'f', 'n', '-', or a digit")
 	}
@@ -239,12 +237,6 @@ func continueNumber(raw []byte) int {
 		i++
 	}
 	return i
-}
-
-func isNumberStartChar(c byte) bool {
-	return false ||
-		(c >= '0' && c <= '9') ||
-		c == '-'
 }
 
 func isNumberContinueChar(c byte) bool {
