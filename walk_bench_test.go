@@ -64,18 +64,15 @@ func BenchmarkWhitespace(b *testing.B) {
 }
 
 func pythonNoIndent(t testing.TB, buf []byte) []byte {
-	return pythonFilter(t, buf, true)
+	return pythonFilter(t, buf, "--no-indent")
 }
 
 func pythonIndent(t testing.TB, buf []byte) []byte {
-	return pythonFilter(t, buf, false)
+	return pythonFilter(t, buf)
 }
 
-func pythonFilter(t testing.TB, buf []byte, noIndent bool) []byte {
-	args := []string{"-m", "json.tool"}
-	if noIndent {
-		args = append(args, "--no-indent")
-	}
+func pythonFilter(t testing.TB, buf []byte, args ...string) []byte {
+	args = append([]string{"-m", "json.tool"}, args...)
 	cmd := exec.Command("python", args...)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout

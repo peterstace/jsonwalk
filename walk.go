@@ -30,9 +30,19 @@ func WalkObject(raw []byte, fn func(key, val []byte) error) error {
 //
 //  - functions with `parse` or `continue` prefixes don't strip whitespace at
 //  the end.
-//
-// TODO: use "outlining"
 func countWS(raw []byte) int {
+	// Fast path, optimised for "no whitespace" or a single space.
+	const maxWS = ' '
+	if 1 < len(raw) {
+		if raw[0] > maxWS {
+			return 0
+		}
+		if raw[0] == ' ' && raw[1] > maxWS {
+			return 1
+		}
+	}
+
+	// Slow path:
 	i := 0
 	for {
 		if i >= len(raw) {
