@@ -77,14 +77,11 @@ func parseValue(raw []byte) (int, error) {
 		n, err := continueString(raw[1:])
 		return 1 + n, err
 	case 't':
-		err := parseExact("rue", raw[1:])
-		return len("true"), err
+		return parseKeyword("true", raw)
 	case 'f':
-		err := parseExact("alse", raw[1:])
-		return len("false"), err
+		return parseKeyword("false", raw)
 	case 'n':
-		err := parseExact("ull", raw[1:])
-		return len("null"), err
+		return parseKeyword("null", raw)
 	default:
 		// TODO: could put number start chars in their own case?
 		if isNumberStartChar(raw[0]) {
@@ -260,13 +257,12 @@ func isNumberContinueChar(c byte) bool {
 		c == '+'
 }
 
-// parseExact checks if the raw has the exact given prefix.
-func parseExact(exact string, raw []byte) error {
-	if len(raw) < len(exact) {
-		return io.ErrUnexpectedEOF
+// parseKeyword checks if raw has at least enough characters to produce the
+// given keyword. Because this is a non-validating parser, it doesn't actually
+// check if the keyword is correct.
+func parseKeyword(keyword string, raw []byte) (int, error) {
+	if len(raw) < len(keyword) {
+		return 0, io.ErrUnexpectedEOF
 	}
-	if string(raw[:len(exact)]) != exact {
-		return fmt.Errorf("expected '%s' to follow", exact)
-	}
-	return nil
+	return len(keyword), nil
 }
