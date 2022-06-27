@@ -82,3 +82,24 @@ func pythonFilter(t testing.TB, buf []byte, args ...string) []byte {
 	}
 	return stdout.Bytes()
 }
+
+func BenchmarkWalkObjectKeyword(b *testing.B) {
+	const n = 10_000
+	vals := make([]any, n)
+	for i := 0; i < n; i++ {
+		switch i % 3 {
+		case 0:
+			vals[i] = true
+		case 1:
+			vals[i] = false
+		}
+	}
+	raw, err := json.Marshal(map[string]any{"": vals})
+	mustBeNoError(b, err)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := jsonwindow.WalkObject(raw, nil)
+		mustBeNoError(b, err)
+	}
+}
